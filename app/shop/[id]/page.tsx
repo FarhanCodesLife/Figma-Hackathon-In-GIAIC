@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import image1 from '@/public/assets/Images (1).png'
-import image2 from '@/public/assets/Images.png'
-import image3 from '@/public/assets/image 1.png'
-import image4 from '@/public/assets/Images (2).png'
-import image5 from '@/public/assets/image 6.png'
-import image6 from '@/public/assets/image 8.png'
+// import image1 from '@/public/assets/Images (1).png'
+// import image2 from '@/public/assets/Images.png'
+// import image3 from '@/public/assets/image 1.png'
+// import image4 from '@/public/assets/Images (2).png'
+// import image5 from '@/public/assets/image 6.png'
+// import image6 from '@/public/assets/image 8.png'
 import Navbar from '@/components/Navbar';
 import Banifits from '@/components/Banifits';
 import Footer from '@/components/Footer';
@@ -29,23 +29,36 @@ const SingleProduct = () => {
     rating: number;        // Rating given by the reviewer (e.g., out of 5)
     comment: string;       // Optional comment from the reviewer
   }
+  // interface Product {
+  //   _id: String;           // Unique identifier for the product
+  //   title: string;          // Name of the product
+  //   description: string;   // Description of the product
+  //   price: number;         // Current price of the product
+  //   originalPrice?: number; // (Optional) Original price before dicountPercentage
+  //   dicountPercentage?: number;     // (Optional) dicountPercentage percentage
+  //   image?: string;        // (Optional) URL or path of the product image
+  //   isNew?: boolean;       // (Optional) Indicates if the product is new
+  //   additionalInfo?: string; // (Optional) Additional details about the product
+  //   category?: string;     // (Optional) Product category (e.g., "Furniture > Chairs")
+  //   tags?: string[];       // (Optional) Array of tags for product classification
+  //   reviews?: Review[];    // (Optional) Array of reviews for the product
+  // }
+
   interface Product {
-    _id: String;           // Unique identifier for the product
-    title: string;          // Name of the product
-    description: string;   // Description of the product
-    price: number;         // Current price of the product
-    originalPrice?: number; // (Optional) Original price before dicountPercentage
-    dicountPercentage?: number;     // (Optional) dicountPercentage percentage
-    image?: string;        // (Optional) URL or path of the product image
-    isNew?: boolean;       // (Optional) Indicates if the product is new
-    additionalInfo?: string; // (Optional) Additional details about the product
-    category?: string;     // (Optional) Product category (e.g., "Furniture > Chairs")
-    tags?: string[];       // (Optional) Array of tags for product classification
-    reviews?: Review[];    // (Optional) Array of reviews for the product
+    _id: number;
+    title: string;
+    description: string;
+    price: number;
+    originalPrice?: number;
+    dicountPercentage?: number;
+    image?: string;
+    isNew?: boolean;
+    reviews?: Review[];
+    tags?: string[]
   }
 
   const [product, setProduct] = useState<Product | null>(null);
-  const [mostSellproduct, setMostSellproduct] = useState<Product[]>([]);
+  const [mostSellproduct, setMostSellproduct] = useState<Product[]|null>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Loading state
 
   const { id } = useParams(); // assuming _id is passed as a string from the URL
@@ -98,10 +111,10 @@ const SingleProduct = () => {
   // Add state for quantity
   const [quantity, setQuantity] = React.useState(1);
 
-  const handleNavigate = () => {
-    // Navigate to a new page (e.g., '/about')
-    // router.push('/cart');
-  };
+  // const handleNavigate = () => {
+  //   // Navigate to a new page (e.g., '/about')
+  //   // router.push('/cart');
+  // };
 
   // Add to cart handler
   const handleAddToCart = () => {
@@ -344,7 +357,7 @@ const SingleProduct = () => {
           <h2 className="text-3xl font-semibold text-gray-800">Most Selling Products</h2>
           <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-8 mt-8">
             
-              {/* <Cards products={mostSellproduct} /> */}
+              <Cards products={mostSellproduct} />
            
           </div>
         </div>

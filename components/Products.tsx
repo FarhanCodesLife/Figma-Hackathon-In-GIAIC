@@ -1,11 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import image1 from "@/public/assets/Images (1).png";
-import image2 from "@/public/assets/Images.png";
-import image3 from "@/public/assets/image 1.png";
-import image4 from "@/public/assets/Images (2).png";
-import image5 from "@/public/assets/image 6.png";
-import image6 from "@/public/assets/image 8.png";
+// import image1 from "@/public/assets/Images (1).png";
+// import image2 from "@/public/assets/Images.png";
+// import image3 from "@/public/assets/image 1.png";
+// import image4 from "@/public/assets/Images (2).png";
+// import image5 from "@/public/assets/image 6.png";
+// import image6 from "@/public/assets/image 8.png";
 import Image from "next/image";
 import Link from "next/link";
 import { client } from "@/sanity/lib/client";
