@@ -25,10 +25,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { urlFor } from "@/sanity/lib/image";
 
 interface Product {
-  id: number;
-  name: string;
+  _id: number;
+  title: string;
   description: string;
   price: number;
   originalPrice?: number;
@@ -59,17 +60,17 @@ const Navbar = () => {
 
   console.log(totalPrice);
 
-  const deleteToCart = (id: number) => {
-    dispatch(removeToCart({ id }));
+  const deleteToCart = (_id: number) => {
+    dispatch(removeToCart({ _id }));
   };
 
-  const increasQuantity = (id: number) => {
-    dispatch(increaseQuantity({ id }));
-    console.log(id);
+  const increasQuantity = (_id: number) => {
+    dispatch(increaseQuantity({ _id }));
+    console.log(_id);
   };
-  const decreasQuantity = (id: number) => {
-    dispatch(decreaseQuantity({ id }));
-    console.log(id);
+  const decreasQuantity = (_id: number) => {
+    dispatch(decreaseQuantity({ _id }));
+    console.log(_id);
   };
 
   return (
@@ -184,13 +185,13 @@ const Navbar = () => {
                 {cartItems.length > 0 ? (
                   cartItems.map((item: Product) => (
                     <div
-                      key={item.id}
+                      key={item._id}
                       className=" items-center justify-between bg-white shadow-sm rounded-lg p-4 mb-4"
                     >
                       <div className="flex items-center space-x-4">
                         <div>
                           <Image
-                            src={item.image || "/path/to/default-image.png"}
+                            src={urlFor(item.image).url() || "/path/to/default-image.png"}
                             width={80}
                             height={50}
                             alt={item.name || "Product"}
@@ -198,16 +199,16 @@ const Navbar = () => {
                           />
                         </div>
                         <div>
-                          <p className="text-lg font-medium">{item.name}</p>
+                          <p className="text-lg font-medium">{item.title}</p>
                           <p className="text-gray-500 text-sm">
-                            {item.description || "Product description"}
+                            {item.description.slice(0,20) || "Product description"}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-4 mt-2">
                         <div className="flex items-center space-x-4">
                           <button
-                            onClick={() => decreasQuantity(item.id)}
+                            onClick={() => decreasQuantity(item._id)}
                             className="px-2 py-1 bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
                           >
                             -
@@ -216,7 +217,7 @@ const Navbar = () => {
                             {item.quantity}
                           </span>
                           <button
-                            onClick={() => increasQuantity(item.id)}
+                            onClick={() => increasQuantity(item._id)}
                             className="px-2 py-1 bg-gray-200 text-gray-600 rounded hover:bg-gray-300"
                           >
                             +
@@ -226,7 +227,7 @@ const Navbar = () => {
                           <h1 className="font-bold">Rs : {item.price}</h1>
                         </div>
                         <FaTrash
-                          onClick={() => deleteToCart(item.id)}
+                          onClick={() => deleteToCart(item._id)}
                           className="text-3xl text-red-500 cursor-pointer"
                         />
                       </div>
@@ -251,9 +252,12 @@ const Navbar = () => {
                         <h1>RS : {totalPrice}</h1>
                       </div>
 
+                      <Link href="/cart">
+
                       <button className="bg-red-500  w-full py-2 rounded-xl ">
                         CheckOut
                       </button>
+                      </Link>
                     </div>
                   </div>
                 )}

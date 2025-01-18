@@ -40,7 +40,7 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className='border-t-2 flex justify-between items-center  px-10 py-2 text-center md:text-left'>
+      <div className='border-t-2 bg-gray-800 text-white flex flex-wrap justify-between items-center  px-10 py-2 text-center md:text-left'>
         <p>2025 furino. All rights reserved</p>
         <p>Develop By Muhammad Farhan</p>
         <a href='https://github.com/FarhanCodesLife/'>Github.com/FarhanCodesLife</a>

@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import image1 from '@/public/assets/Images (1).png'
@@ -15,256 +15,106 @@ import Link from 'next/link';
 import Cards from '@/components/Cards';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import {  useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { addToCart } from '@/app/reduxconfig/reducer/cartSlice.js';
+import { client } from '@/sanity/lib/client';
+import { urlFor } from '@/sanity/lib/image';
+import { Skeleton } from "@/components/ui/skeleton"
+// import { useRouter } from 'next/router';
 
 const SingleProduct = () => {
 
-    interface Review {
-        user: string;          // Name of the reviewer
-        rating: number;            // Rating given by the reviewer (e.g., out of 5)
-        comment: string;           // Optional comment from the reviewer
+  interface Review {
+    user: string;          // Name of the reviewer
+    rating: number;        // Rating given by the reviewer (e.g., out of 5)
+    comment: string;       // Optional comment from the reviewer
+  }
+  interface Product {
+    _id: String;           // Unique identifier for the product
+    title: string;          // Name of the product
+    description: string;   // Description of the product
+    price: number;         // Current price of the product
+    originalPrice?: number; // (Optional) Original price before dicountPercentage
+    dicountPercentage?: number;     // (Optional) dicountPercentage percentage
+    image?: string;        // (Optional) URL or path of the product image
+    isNew?: boolean;       // (Optional) Indicates if the product is new
+    additionalInfo?: string; // (Optional) Additional details about the product
+    category?: string;     // (Optional) Product category (e.g., "Furniture > Chairs")
+    tags?: string[];       // (Optional) Array of tags for product classification
+    reviews?: Review[];    // (Optional) Array of reviews for the product
+  }
+
+  const [product, setProduct] = useState<Product | null>(null);
+  const [mostSellproduct, setMostSellproduct] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Loading state
+
+  const { id } = useParams(); // assuming _id is passed as a string from the URL
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) {
+        console.error("Product ID is missing.");
+        toast.error("Invalid product ID.");
+        return;
       }
-    interface Product {
-        id: number;                // Unique identifier for the product
-        name: string;              // Name of the product
-        description: string;       // Description of the product
-        price: number;             // Current price of the product
-        originalPrice?: number;    // (Optional) Original price before discount
-        discount?: number;         // (Optional) Discount percentage
-        image?: string;            // (Optional) URL or path of the product image
-        isNew?: boolean;           // (Optional) Indicates if the product is new
-        additionalInfo?: string;   // (Optional) Additional details about the product
-        category?: string;         // (Optional) Product category (e.g., "Furniture > Chairs")
-        tags?: string[];           // (Optional) Array of tags for product classification
-        reviews?: Review[];        // (Optional) Array of reviews for the product
+
+      try {
+        const singleProduct = `*[_id == "${id}"]`;
+        const mostSell = `*[price > 100]`;
+        const data = await client.fetch(singleProduct);
+        const mostSellData = await client.fetch(mostSell);
+        setMostSellproduct(mostSellData);
+
+        if (data && data.length > 0) {
+          setProduct(data[0]); // Set the first product from the result
+        } else {
+          console.warn("No product found for the given ID.");
+          toast.error("Product not found.");
+        }
+      } catch (error) {
+        console.error("Error fetching product data:", error);
+        toast.error("Failed to load product details.");
+      } finally {
+        setIsLoading(false); // End loading state
       }
-      const products: Product[] = [
-        {
-          id: 1,
-          name: 'Slytherine',
-          description: 'A stylish and comfortable cafe chair, perfect for modern interiors.',
-          price: 2500000,
-          originalPrice: 3500000,
-          discount: 30,
-          image: image1.src,
-          reviews: [
-            { user: 'John Doe', rating: 4.5, comment: 'Very stylish and sturdy!' },
-            { user: 'Jane Smith', rating: 4, comment: 'Great value for money.' }
-          ],
-          additionalInfo: 'Made with premium oak wood and eco-friendly paint. Weight capacity: 120kg.',
-          category: 'Furniture > Chairs',
-          tags: ['Cafe', 'Stylish', 'Modern', 'Durable']
-        },
-        {
-          id: 2,
-          name: 'Leviosa',
-          description: 'A sleek and modern cafe chair to enhance your decor.',
-          price: 2500000,
-          image: image2.src,
-          reviews: [
-            { user: 'Emily Clark', rating: 4, comment: 'Good chair, but the price could be lower.' },
-            { user: 'Mark Johnson', rating: 4.2, comment: 'Stylish and comfortable.' }
-          ],
-          additionalInfo: 'Ergonomic design with cushioned seat. Lightweight and easy to move.',
-          category: 'Furniture > Chairs',
-          tags: ['Cafe', 'Sleek', 'Comfortable']
-        },
-        {
-          id: 3,
-          name: 'Lolito',
-          description: 'A luxury big sofa designed for ultimate comfort and elegance.',
-          price: 7000000,
-          originalPrice: 14000000,
-          discount: 50,
-          image: image3.src,
-          reviews: [
-            { user: 'Sophia Wilson', rating: 5, comment: 'Absolutely love this sofa, worth every penny!' },
-            { user: 'Michael Brown', rating: 4.8, comment: 'Spacious and comfortable, fits perfectly in my living room.' }
-          ],
-          additionalInfo: 'Premium leather upholstery with a solid wood frame. Seats up to 5 people.',
-          category: 'Furniture > Sofas',
-          tags: ['Luxury', 'Comfort', 'Elegant', 'Spacious']
-        },
-        {
-          id: 4,
-          name: 'Respira',
-          description: 'Outdoor bar table and stool set for relaxing outdoor evenings.',
-          price: 500000,
-          isNew: true,
-          image: image4.src,
-          reviews: [
-            { user: 'Chris Evans', rating: 4.6, comment: 'Great for my patio!' },
-            { user: 'Sarah Lee', rating: 4.7, comment: 'Compact and stylish.' }
-          ],
-          additionalInfo: 'Weather-resistant materials, suitable for patios and gardens. Includes a table and two stools.',
-          category: 'Furniture > Outdoor',
-          tags: ['Outdoor', 'Bar', 'Stylish', 'Durable']
-        },
-        {
-          id: 5,
-          name: 'Lolito',
-          description: 'A luxury big sofa designed for ultimate comfort and elegance.',
-          price: 7000000,
-          originalPrice: 14000000,
-          discount: 50,
-          image: image5.src,
-          reviews: [
-            { user: 'Sophia Wilson', rating: 5, comment: 'Absolutely love this sofa, worth every penny!' },
-            { user: 'Michael Brown', rating: 4.8, comment: 'Spacious and comfortable, fits perfectly in my living room.' }
-          ],
-          additionalInfo: 'Premium leather upholstery with a solid wood frame. Seats up to 5 people.',
-          category: 'Furniture > Sofas',
-          tags: ['Luxury', 'Comfort', 'Elegant', 'Spacious']
-        },
-        {
-          id: 6,
-          name: 'Slytherine',
-          description: 'A stylish and comfortable cafe chair, perfect for modern interiors.',
-          price: 2500000,
-          originalPrice: 3500000,
-          discount: 30,
-          image: image6.src,
-          reviews: [
-            { user: 'John Doe', rating: 4.5, comment: 'Very stylish and sturdy!' },
-            { user: 'Jane Smith', rating: 4, comment: 'Great value for money.' }
-          ],
-          additionalInfo: 'Made with premium oak wood and eco-friendly paint. Weight capacity: 120kg.',
-          category: 'Furniture > Chairs',
-          tags: ['Cafe', 'Stylish', 'Modern', 'Durable']
-        },
-        {
-          id: 7,
-          name: 'Leviosa',
-          description: 'A sleek and modern cafe chair to enhance your decor.',
-          price: 2500000,
-          image: image2.src,
-          reviews: [
-            { user: 'Emily Clark', rating: 4, comment: 'Good chair, but the price could be lower.' },
-            { user: 'Mark Johnson', rating: 4.2, comment: 'Stylish and comfortable.' }
-          ],
-          additionalInfo: 'Ergonomic design with cushioned seat. Lightweight and easy to move.',
-          category: 'Furniture > Chairs',
-          tags: ['Cafe', 'Sleek', 'Comfortable']
-        },
-        {
-          id: 8,
-          name: 'Respira',
-          description: 'Outdoor bar table and stool set for relaxing outdoor evenings.',
-          price: 500000,
-          isNew: true,
-          image: image3.src,
-          reviews: [
-            { user: 'Chris Evans', rating: 4.6, comment: 'Great for my patio!' },
-            { user: 'Sarah Lee', rating: 4.7, comment: 'Compact and stylish.' }
-          ],
-          additionalInfo: 'Weather-resistant materials, suitable for patios and gardens. Includes a table and two stools.',
-          category: 'Furniture > Outdoor',
-          tags: ['Outdoor', 'Bar', 'Stylish', 'Durable']
-        },
-        {
-          id: 9,
-          name: 'Slytherine',
-          description: 'A stylish and comfortable cafe chair, perfect for modern interiors.',
-          price: 2500000,
-          originalPrice: 3500000,
-          discount: 30,
-          image: image6.src,
-          reviews: [
-            { user: 'John Doe', rating: 4.5, comment: 'Very stylish and sturdy!' },
-            { user: 'Jane Smith', rating: 4, comment: 'Great value for money.' }
-          ],
-          additionalInfo: 'Made with premium oak wood and eco-friendly paint. Weight capacity: 120kg.',
-          category: 'Furniture > Chairs',
-          tags: ['Cafe', 'Stylish', 'Modern', 'Durable']
-        },
-        {
-          id: 10,
-          name: 'Leviosa',
-          description: 'A sleek and modern cafe chair to enhance your decor.',
-          price: 2500000,
-          image: image2.src,
-          reviews: [
-            { user: 'Emily Clark', rating: 4, comment: 'Good chair, but the price could be lower.' },
-            { user: 'Mark Johnson', rating: 4.2, comment: 'Stylish and comfortable.' }
-          ],
-          additionalInfo: 'Ergonomic design with cushioned seat. Lightweight and easy to move.',
-          category: 'Furniture > Chairs',
-          tags: ['Cafe', 'Sleek', 'Comfortable']
-        },
-        {
-          id: 11,
-          name: 'Respira',
-          description: 'Outdoor bar table and stool set for relaxing outdoor evenings.',
-          price: 500000,
-          isNew: true,
-          image: image3.src,
-          reviews: [
-            { user: 'Chris Evans', rating: 4.6, comment: 'Great for my patio!' },
-            { user: 'Sarah Lee', rating: 4.7, comment: 'Compact and stylish.' }
-          ],
-          additionalInfo: 'Weather-resistant materials, suitable for patios and gardens. Includes a table and two stools.',
-          category: 'Furniture > Outdoor',
-          tags: ['Outdoor', 'Bar', 'Stylish', 'Durable']
-        },
-        {
-          id: 12,
-          name: 'Slytherine',
-          description: 'A stylish and comfortable cafe chair, perfect for modern interiors.',
-          price: 2500000,
-          originalPrice: 3500000,
-          discount: 30,
-          image: image6.src,
-          reviews: [
-            { user: 'John Doe', rating: 4.5, comment: 'Very stylish and sturdy!' },
-            { user: 'Jane Smith', rating: 4, comment: 'Great value for money.' }
-          ],
-          additionalInfo: 'Made with premium oak wood and eco-friendly paint. Weight capacity: 120kg.',
-          category: 'Furniture > Chairs',
-          tags: ['Cafe', 'Stylish', 'Modern', 'Durable']
-        },
-        {
-          id: 13,
-          name: 'Leviosa',
-          description: 'A sleek and modern cafe chair to enhance your decor.',
-          price: 2500000,
-          image: image2.src,
-          reviews: [
-            { user: 'Emily Clark', rating: 4, comment: 'Good chair, but the price could be lower.' },
-            { user: 'Mark Johnson', rating: 4.2, comment: 'Stylish and comfortable.' }
-          ],
-          additionalInfo: 'Ergonomic design with cushioned seat. Lightweight and easy to move.',
-          category: 'Furniture > Chairs',
-          tags: ['Cafe', 'Sleek', 'Comfortable']
-        },
-    ]
-      
+    };
 
+    fetchProduct();
 
+    // Cleanup function (optional, for fetch cancellation)
+    return () => {
+      setProduct(null); // Reset state when component unmounts
+    };
+  }, [id]);
 
-    const dispatch = useDispatch()
-  const { id } = useParams();
-  const product = products.find(p => p.id === Number(id));
+  const dispatch = useDispatch();
+  console.log(product);
 
   // Add color and size options
   const colorOptions = ['#6B7FB7', '#986B9C', '#A48D6B'];
   const sizeOptions = ['L', 'XL', 'XS'];
+  // const imageUrl = product?.image?.asset?._ref ? urlFor(product.productImage).url() : '/placeholder.jpg';
+
   // Add state for quantity
   const [quantity, setQuantity] = React.useState(1);
 
+  const handleNavigate = () => {
+    // Navigate to a new page (e.g., '/about')
+    // router.push('/cart');
+  };
+
   // Add to cart handler
   const handleAddToCart = () => {
-    console.log("click buton");
+    console.log("click button");
 
     dispatch(addToCart({
       ...product,
       quantity,
       colorOptions,
       sizeOptions
-    }))
+    }));
 
-    
-    toast.success(`Added ${quantity} ${product?.name} to cart`, {
+    toast.success(`Added ${quantity} ${product?.title} to cart`, {
       description: `Quantity: ${quantity}`,
       action: {
         label: "View Cart",
@@ -276,19 +126,31 @@ const SingleProduct = () => {
   if (!product) {
     return (
       <>
-
         <Navbar />
-        <div className="text-center py-12">Product not found</div>
-        <Banifits/>
+        <div className="grid md:grid-cols-2 mx-16 my-10 container justify-center items-center w-full gap-8 lg:gap-2">
+          <div className=''>
+            <Skeleton className="lg:h-[600px] h-[400px] lg:w-[44vw] w-[80vw] rounded-xl" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="lg:h-10 h-8 lg:w-[300px] w-[200px]" />
+            <Skeleton className="lg:h-6 h-4 lg:w-[200px] w-[150px]" />
+            <Skeleton className="lg:h-10 h-8 lg:w-[150px] w-[100px]" />
+            <Skeleton className="lg:h-36 h-32 lg:w-[400px] w-[200px]" />
+            <Skeleton className="lg:h-6 h-4 lg:w-[50px] w-[20px]" />
+            <Skeleton className="lg:h-12 h-10 lg:w-[150px] w-[80px]" />
+            <Skeleton className="lg:h-6 h-4 lg:w-[50px] w-[30px]" />
+            <Skeleton className="lg:h-12 h-10 lg:w-[150px] w-[70px]" />
+            <Skeleton className="lg:h-16 h-10 lg:w-[520px] w-[70vw]" />
+          </div>
+        </div>
+        <Banifits />
         <Footer />
-
       </>
     );
   }
 
   return (
     <>
-
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -296,23 +158,45 @@ const SingleProduct = () => {
           <span className="text-gray-400">/</span>
           <Link href="/shop" className="text-gray-600 hover:text-orange-500">Shop</Link>
           <span className="text-gray-400">/</span>
-          <span className="text-orange-500 font-medium">{product.name}</span>
+          <span className="text-orange-500 font-medium">{product.title}</span>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+            <div className=''>
+              <Skeleton className="lg:h-[600px] h-[400px] lg:w-[44vw] w-[80vw] rounded-xl" />
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="lg:h-10 h-8 lg:w-[300px] w-[200px]" />
+              <Skeleton className="lg:h-6 h-4 lg:w-[200px] w-[150px]" />
+              <Skeleton className="lg:h-10 h-8 lg:w-[150px] w-[100px]" />
+              <Skeleton className="lg:h-36 h-32 lg:w-[400px] w-[200px]" />
+              <Skeleton className="lg:h-6 h-4 lg:w-[50px] w-[20px]" />
+              <Skeleton className="lg:h-12 h-10 lg:w-[150px] w-[80px]" />
+              <Skeleton className="lg:h-6 h-4 lg:w-[50px] w-[30px]" />
+              <Skeleton className="lg:h-12 h-10 lg:w-[150px] w-[70px]" />
+              <Skeleton className="lg:h-16 h-10 lg:w-[520px] w-[70vw]" />
+            </div>
+          </div>
+        ) : (
+          
+<div>
+         
+
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-gray-100">
             <Image
-              src={product.image || '/placeholder.jpg'}
-              alt={product.name}
+              src={urlFor(product.image).url() || '/placeholder.jpg'}
+              alt={product.title}
               fill
               className="object-cover hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 30vw"
             />
-            {product.discount && (
+            {product.dicountPercentage && (
               <span className="absolute top-4 left-4 bg-red-500 text-white px-4 py-1.5 rounded-full text-sm font-medium">
-                -{product.discount}% OFF
+                -{product.dicountPercentage}% OFF
               </span>
             )}
             {product.isNew && (
@@ -324,7 +208,7 @@ const SingleProduct = () => {
 
           <div className="flex flex-col space-y-6 sm:space-y-8">
             <div className="space-y-4">
-              <h1 className="text-4xl font-bold text-gray-900">{product.name}</h1>
+              <h1 className="text-4xl font-bold text-gray-900">{product.title}</h1>
               <div className="flex items-center gap-3">
                 <div className="flex text-yellow-400 text-lg">
                   {'★'.repeat(4)}{'☆'.repeat(1)}
@@ -344,7 +228,7 @@ const SingleProduct = () => {
               </div>
             </div>
 
-            <p className="text-gray-600 leading-relaxed">{product.description}</p>
+            <p className="text-gray-600 leading-relaxed">{product.description.slice(0,100)}</p>
 
             <div className="space-y-3">
               <span className="text-sm font-medium text-gray-700">Select Size</span>
@@ -439,25 +323,37 @@ const SingleProduct = () => {
           </div>
           <div className="py-8 pb-20 border-b-2">
             <p className="text-gray-600 leading-relaxed">
-              {product.additionalInfo}
+              {product.description}
             </p>
           </div>
         </div>
       </div>
-      <div className='m-4 sm:m-10 text-center'>
+      // <div className='m-4 sm:m-10 text-center'>
         
-       <h1 className='text-3xl m-10 font-bold'>
+      //  <h1 className='text-3xl m-10 font-bold'>
         
-         Most Selling Products
-        </h1>
+      //    Most Selling Products
+      //   </h1>
 
-      <Cards products={products}/>
+      // <Cards products={products}/>
+      // </div>
+        )}
+
+        {/* Most Sell Section */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-semibold text-gray-800">Most Selling Products</h2>
+          <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-8 mt-8">
+            
+              {/* <Cards products={mostSellproduct} /> */}
+           
+          </div>
+        </div>
       </div>
+
       <Banifits />
       <Footer />
-
     </>
   );
 };
 
-export default SingleProduct; 
+export default SingleProduct;

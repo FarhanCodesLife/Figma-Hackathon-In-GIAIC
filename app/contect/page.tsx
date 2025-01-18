@@ -123,7 +123,6 @@ const page = () => {
 
     <Banifits/>
     <Footer/>
-    <div>page</div>
     </>
   )
 }
