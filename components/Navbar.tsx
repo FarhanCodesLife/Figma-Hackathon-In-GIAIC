@@ -43,12 +43,17 @@ interface Product {
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [heartCount, setHeartCount] = useState(0);
+  // const [heartCount, setHeartCount] = useState(0);
+  // const [cartCount, setcartCount] = useState(0);
 
   const dispatch = useDispatch();
   const cartItems: Product[] = useSelector(
     (state: { cart: { cartItems: Product[] } }) => state.cart.cartItems
   );
+  const wishItems: Product[] = useSelector(
+    (state: { wish: { wishItems: Product[] } }) => state.wish.wishItems
+  );
+  // setcartCount(cartItems.length)
   const totalItems = cartItems.reduce(
     (total: number, item: Product) => total + item.quantity,
     0
@@ -149,30 +154,42 @@ const Navbar = () => {
             )}
           </div>
           <div className="relative">
+            <Link href="/wishlist">
+            <button>
+
             <Image
               src={hearticon}
               className="cursor-pointer hover:scale-105"
               width={25}
               height={30}
               alt="favorites"
-              onClick={() => setHeartCount((prev) => prev + 1)}
-            />
-            {heartCount > 0 && (
+              // onClick={() => setHeartCount((prev) => prev + 1)}
+              />
+            {wishItems.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                {heartCount}
+                {wishItems.length}
               </span>
             )}
+            </button>
+            </Link>
           </div>
           <Sheet>
             <SheetTrigger asChild>
-              <div>
+              <div className="relative">
                 <Image
                   src={carticon}
                   className="cursor-pointer hover:scale-105"
                   width={25}
                   height={30}
                   alt="cart"
+                  // onClick={() => setHeartCount((prev) => prev + 1)}
+
                 />
+               {cartItems.length > 0 && (
+              <span className="absolute cursor-pointer -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                {cartItems.length}
+              </span>
+            )}
               </div>
             </SheetTrigger>
             <SheetContent>
@@ -194,7 +211,7 @@ const Navbar = () => {
                             src={urlFor(item.image).url() || "/path/to/default-image.png"}
                             width={80}
                             height={50}
-                            alt={item.name || "Product"}
+                            alt={item.title || "Product"}
                             className="border"
                           />
                         </div>

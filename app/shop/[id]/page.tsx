@@ -20,6 +20,7 @@ import { addToCart } from '@/app/reduxconfig/reducer/cartSlice.js';
 import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
 import { Skeleton } from "@/components/ui/skeleton"
+import { addTowish } from '@/app/reduxconfig/reducer/wishSlice';
 // import { useRouter } from 'next/router';
 
 const SingleProduct = () => {
@@ -73,7 +74,7 @@ const SingleProduct = () => {
 
       try {
         const singleProduct = `*[_id == "${id}"]`;
-        const mostSell = `*[price > 100]`;
+        const mostSell = `*[price > 200]`;
         const data = await client.fetch(singleProduct);
         const mostSellData = await client.fetch(mostSell);
         setMostSellproduct(mostSellData);
@@ -127,6 +128,9 @@ const SingleProduct = () => {
       sizeOptions
     }));
 
+
+    
+  
     toast.success(`Added ${quantity} ${product?.title} to cart`, {
       description: `Quantity: ${quantity}`,
       action: {
@@ -135,6 +139,17 @@ const SingleProduct = () => {
       },
     });
   };
+
+  const handleAddTowish = () => {
+    console.log("click button");
+
+    dispatch(addTowish({
+      ...product,
+      quantity,
+      colorOptions,
+      sizeOptions
+    }));
+  }
 
   if (!product) {
     return (
@@ -302,7 +317,9 @@ const SingleProduct = () => {
               >
                 Add To Cart
               </Button>
-              <button className="px-4 py-3 border-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <button
+              onClick={handleAddTowish}
+              className="px-4 py-3 border-2 rounded-lg hover:bg-gray-50 transition-colors">
                 ♡
               </button>
             </div>
@@ -355,11 +372,11 @@ const SingleProduct = () => {
         {/* Most Sell Section */}
         <div className="mt-16">
           <h2 className="text-3xl font-semibold text-gray-800">Most Selling Products</h2>
-          <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-8 mt-8">
+          {/* <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-8 mt-8"> */}
             
-              <Cards products={mostSellproduct} />
+              {/* <Cards products={mostSellproduct} /> */}
            
-          </div>
+          {/* </div> */}
         </div>
       </div>
 

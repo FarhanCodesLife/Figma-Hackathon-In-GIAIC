@@ -2,6 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
+import { urlFor } from '@/sanity/lib/image';
 
 interface Product {
   _id: number;
@@ -11,6 +12,7 @@ interface Product {
   originalPrice?: number;
   dicountPercentage?: number;
   productImage?: string;
+  image?: string;
   isNew?: boolean;
   quantity?: number;
 }
@@ -50,7 +52,7 @@ const Cards = ({ products }: { products: Product[] }) => {
 
               <div className="relative aspect-square">
                 <Image
-                  src={ product.productImage|| "/placeholder.jpg"}
+                  src={ product.productImage || urlFor(product.image).url()}
                   alt={product.title}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

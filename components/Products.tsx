@@ -19,7 +19,7 @@ interface Product {
   price: number;
   originalPrice?: number;
   dicountPercentage?: number;
-  productImage?: string;
+  image?: string;
   isNew?: boolean;
 }
 
