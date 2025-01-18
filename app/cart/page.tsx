@@ -18,7 +18,7 @@ import { FaTrash } from "react-icons/fa6";
 
 interface Product {
   _id: number;
-  name: string;
+  title: string;
   description: string;
   price: number;
   originalPrice?: number;
@@ -85,7 +85,7 @@ const Page = () => {
                     <td className="w-2/12 text-center">{item.title.slice(0,7)}...</td>
                     <td className="w-1/12 text-center">Green</td>
                     <td className="w-1/12 text-center">M</td>
-                    <td className="w-2/12 text-center">${item.price}</td>
+                    <td className="w-2/12 text-center">{item.price}</td>
                     <td className="w-2/12 text-center">
                       <div className="flex items-center justify-center space-x-2">
                         <button
