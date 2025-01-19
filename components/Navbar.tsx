@@ -209,16 +209,16 @@ const Navbar = () => {
                         <div>
                           <Image
                             src={urlFor(item.image).url() || "/path/to/default-image.png"}
-                            width={80}
+                            width={50}
                             height={50}
                             alt={item.title || "Product"}
-                            className="border"
+                            className="border bg-cover rounded-md"
                           />
                         </div>
                         <div>
-                          <p className="text-lg font-medium">{item.title}</p>
+                          <p className="text-lg font-medium">{item.title.slice(0,15)}...</p>
                           <p className="text-gray-500 text-sm">
-                            {item.description.slice(0,20) || "Product description"}
+                            {item.description.slice(0,30) || "Product description"}...
                           </p>
                         </div>
                       </div>
@@ -251,7 +251,7 @@ const Navbar = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="mt-4 text-center text-gray-100">
+                  <div className="mt-4 text-center">
                     <p>Your cart is empty</p>
                   </div>
                 )}

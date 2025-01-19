@@ -155,7 +155,7 @@ const SingleProduct = () => {
     return (
       <>
         <Navbar />
-        <div className="grid md:grid-cols-2 mx-16 my-10 container justify-center items-center w-full gap-8 lg:gap-2">
+        <div className="grid md:grid-cols-2 lg:mx-16 lg:my-10 container justify-center items-center w-full gap-8 lg:gap-2">
           <div className=''>
             <Skeleton className="lg:h-[600px] h-[400px] lg:w-[44vw] w-[80vw] rounded-xl" />
           </div>

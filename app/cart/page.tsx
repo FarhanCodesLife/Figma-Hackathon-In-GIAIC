@@ -73,13 +73,13 @@ const Page = () => {
               <tbody className="divide-y">
                 {cartItems.map((item: Product) => (
                   <tr className="p-4" key={item._id}>
-                    <td className="w-2/12 items-center">
+                    <td className="w-2/12 ">
                       <Image
                         src={urlFor(item.image).url() || "/path/to/default-image.png"}
                         width={80}
                         height={50}
                         alt={item.title || "Product"}
-                        className="border my-2"
+                        className="border my-2 bg-cover rounded-md"
                       />
                     </td>
                     <td className="w-2/12 text-center">{item.title.slice(0,7)}...</td>
