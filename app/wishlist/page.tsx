@@ -7,9 +7,9 @@ import Footer from "@/components/Footer";
 import backgroundimage from "@/public/assets/Rectangle 1.png";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
-import { removeTowish, addToCart } from "../reduxconfig/reducer/wishSlice";
+import { removeTowish } from "../reduxconfig/reducer/wishSlice";
 import { urlFor } from "@/sanity/lib/image";
-import { FaTrash, FaShoppingCart } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
 import Link from "next/link";
 
 interface Product {

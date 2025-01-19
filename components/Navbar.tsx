@@ -38,6 +38,8 @@ interface Product {
   isNew?: boolean;
   quantity: number;
   quantityprice: number;
+  selectedSize?:string;
+  selectedColor?:string
 }
 
 const Navbar = () => {
@@ -221,6 +223,11 @@ const Navbar = () => {
                             {item.description.slice(0,30) || "Product description"}...
                           </p>
                         </div>
+                          <span
+            className="inline-block w-6 h-6 rounded-full"
+            style={{ backgroundColor: item.selectedColor }}
+          ></span>
+          <p className="text-lg font-medium">{item.selectedSize}</p>
                       </div>
                       <div className="flex items-center space-x-4 mt-2">
                         <div className="flex items-center space-x-4">

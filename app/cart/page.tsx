@@ -27,6 +27,8 @@ interface Product {
   isNew?: boolean;
   quantity: number;
   quantityprice: number;
+  selectedSize?:string;
+  selectedColor?:string
 }
 
 const Page = () => {
@@ -48,6 +50,7 @@ const Page = () => {
     dispatch(decreaseQuantity({ _id }));
     console.log(_id);
   };
+console.log(cartItems);
 
   return (
     <>
@@ -83,8 +86,12 @@ const Page = () => {
                       />
                     </td>
                     <td className="w-2/12 text-center">{item.title.slice(0,7)}...</td>
-                    <td className="w-1/12 text-center">Green</td>
-                    <td className="w-1/12 text-center">M</td>
+                    <td className="w-1/12 text-center"><span
+            className="inline-block w-6 h-6 rounded-full"
+            style={{ backgroundColor: item.selectedColor }}
+          ></span>
+          </td>
+                    <td className="w-1/12 text-center">{item.selectedSize}</td>
                     <td className="w-2/12 text-center">{item.price}</td>
                     <td className="w-2/12 text-center">
                       <div className="flex items-center justify-center space-x-2">

@@ -12,15 +12,15 @@ import Navbar from '@/components/Navbar';
 import Banifits from '@/components/Banifits';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
-import Cards from '@/components/Cards';
+// import Cards from '@/components/Cards';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '@/app/reduxconfig/reducer/cartSlice.js';
 import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
 import { Skeleton } from "@/components/ui/skeleton"
-import { addTowish } from '@/app/reduxconfig/reducer/wishSlice';
+import { addTowish, removeTowish } from '@/app/reduxconfig/reducer/wishSlice';
 // import { useRouter } from 'next/router';
 
 const SingleProduct = () => {
@@ -59,11 +59,15 @@ const SingleProduct = () => {
   }
 
   const [product, setProduct] = useState<Product | null>(null);
-  const [mostSellproduct, setMostSellproduct] = useState<Product[]|null>([]);
+  // const [mostSellproduct, setMostSellproduct] = useState<Product[]|null>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Loading state
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const wishItems: Product[] = useSelector(
+      (state: { wish: { wishItems: Product[] } }) => state.wish.wishItems
+    ); // Assuming wishlist is in Redux state
 
   const { id } = useParams(); // assuming _id is passed as a string from the URL
-
+ 
   useEffect(() => {
     const fetchProduct = async () => {
       if (!id) {
@@ -77,11 +81,13 @@ const SingleProduct = () => {
         const mostSell = `*[price > 200]`;
         const data = await client.fetch(singleProduct);
         const mostSellData = await client.fetch(mostSell);
-        setMostSellproduct(mostSellData);
-
+        // setMostSellproduct(mostSellData);
         if (data && data.length > 0) {
           setProduct(data[0]); // Set the first product from the result
-        } else {
+        }
+         
+            
+         else {
           console.warn("No product found for the given ID.");
           toast.error("Product not found.");
         }
@@ -90,9 +96,10 @@ const SingleProduct = () => {
         toast.error("Failed to load product details.");
       } finally {
         setIsLoading(false); // End loading state
-      }
-    };
+       
 
+    };
+  }
     fetchProduct();
 
     // Cleanup function (optional, for fetch cancellation)
@@ -100,6 +107,14 @@ const SingleProduct = () => {
       setProduct(null); // Reset state when component unmounts
     };
   }, [id]);
+
+
+  useEffect(() => {
+    if (product) {
+      const exists = wishItems.some((item) => item._id === product._id);
+      setIsInWishlist(exists);
+    }
+  }, [wishItems, product]);
 
   const dispatch = useDispatch();
   console.log(product);
@@ -116,16 +131,24 @@ const SingleProduct = () => {
   //   // Navigate to a new page (e.g., '/about')
   //   // router.push('/cart');
   // };
-
+  const [selectedSize, setSelectedSize] = useState(null); // For selected size
+  const [selectedColor, setSelectedColor] = useState(null); // For selected color
   // Add to cart handler
   const handleAddToCart = () => {
     console.log("click button");
+    if (!selectedSize || !selectedColor) {
+      // alert("Please select both size and color before adding to cart.");
+      toast.error(`Please select both size and color`, {
+        description: "Then add to cart functionality.",
+      });
+      return;
+    }
 
     dispatch(addToCart({
       ...product,
       quantity,
-      colorOptions,
-      sizeOptions
+      selectedSize,
+      selectedColor
     }));
 
 
@@ -141,15 +164,39 @@ const SingleProduct = () => {
   };
 
   const handleAddTowish = () => {
-    console.log("click button");
+    if (isInWishlist) {
+      // Remove item from wishlist
+      dispatch(removeTowish(product)); // Create a removeFromWish action in your Redux slice
+      setIsInWishlist(false);
+      toast.error(`${product?.title} removed from Wishlist`, {
+        description: "Item has been removed successfully.",
+      });
+    } else {
+      // Add item to wishlist
+      dispatch(addTowish({
+        ...product,
+        quantity,
+        colorOptions,
+        sizeOptions,
+      }));
+      setIsInWishlist(true);
+      toast.success(`${product?.title} added to Wishlist`, {
+        description: "Check your Wishlist.",
+      });
+    }
+  };
+  
+  // const handleAddTowish = () => {
+    
+  //   console.log("click button");
 
-    dispatch(addTowish({
-      ...product,
-      quantity,
-      colorOptions,
-      sizeOptions
-    }));
-  }
+  //   dispatch(addTowish({
+  //     ...product,
+  //     quantity,
+  //     colorOptions,
+  //     sizeOptions
+  //   }));
+  // }
 
   if (!product) {
     return (
@@ -257,36 +304,38 @@ const SingleProduct = () => {
             </div>
 
             <p className="text-gray-600 leading-relaxed">{product.description.slice(0,100)}</p>
-
             <div className="space-y-3">
-              <span className="text-sm font-medium text-gray-700">Select Size</span>
-              <div className="flex gap-3">
-                {sizeOptions.map((size) => (
-                  <button 
-                    key={size} 
-                    className="w-12 h-12 border-2 rounded-lg flex items-center justify-center
-                    hover:border-orange-500 hover:text-orange-500 transition-colors
-                    focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
+  <span className="text-sm font-medium text-gray-700">Select Size</span>
+  <div className="flex gap-3">
+    {sizeOptions.map((size) => (
+      <button
+        key={size}
+        className={`w-12 h-12 border-2 rounded-lg flex items-center justify-center transition-colors ${
+          selectedSize === size ? "border-orange-500 text-orange-500" : "hover:border-orange-500"
+        }`}
+        onClick={() => setSelectedSize(size)} // Set selected size
+      >
+        {size}
+      </button>
+    ))}
+  </div>
+</div>
 
-            <div className="space-y-3">
-              <span className="text-sm font-medium text-gray-700">Select Color</span>
-              <div className="flex gap-3">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color}
-                    className="w-10 h-10 rounded-full border-2 border-white ring-2 ring-gray-200
-                    hover:ring-orange-500 transition-colors focus:outline-none focus:ring-offset-2"
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
+<div className="space-y-3 mt-4">
+  <span className="text-sm font-medium text-gray-700">Select Color</span>
+  <div className="flex gap-3">
+    {colorOptions.map((color) => (
+      <button
+        key={color}
+        className={`w-10 h-10 rounded-full border-2 ring-2 transition-colors ${
+          selectedColor === color ? "ring-orange-500" : "ring-gray-200 hover:ring-orange-500"
+        }`}
+        style={{ backgroundColor: color }}
+        onClick={() => setSelectedColor(color)} // Set selected color
+      />
+    ))}
+  </div>
+</div>
 
             <div className="flex flex- sm: items-stretch sm:items-center gap-4">
               <div className="flex  border-2 rounded-lg overflow-hidden">
@@ -318,10 +367,13 @@ const SingleProduct = () => {
                 Add To Cart
               </Button>
               <button
-              onClick={handleAddTowish}
-              className="px-4 py-3 border-2 rounded-lg hover:bg-gray-50 transition-colors">
-                ♡
-              </button>
+      onClick={handleAddTowish}
+      className={`px-4 py-3 border-2 rounded-lg transition-colors ${
+        isInWishlist ? "bg-red-500 text-white" : "hover:bg-gray-50"
+      }`}
+    >
+      {isInWishlist ? "♥" : "♡"}
+    </button>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 pt-6 border-t">
