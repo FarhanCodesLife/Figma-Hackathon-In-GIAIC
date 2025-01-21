@@ -3,9 +3,16 @@ import { createSlice } from "@reduxjs/toolkit";
 const cartSlice = createSlice({
   name: "cart",
   initialState: {
-    cartItems: JSON.parse(localStorage.getItem("cartItems")) || [], // LocalStorage se data load
+    cartItems: [],
   },
   reducers: {
+    initializeCart: (state) => {
+      if (typeof window !== "undefined") { // Ensure we're on the client-side
+        const cartItems = JSON.parse(localStorage.getItem("cartItems")) || [];
+        state.cartItems = cartItems;
+      }
+    },
+
     addToCart: (state, action) => {
       const existingItem = state.cartItems.find((item) => item._id === action.payload._id);
       const quantityprice = action.payload.quantity * action.payload.price;
@@ -15,12 +22,18 @@ const cartSlice = createSlice({
       } else {
         state.cartItems.push({ ...action.payload, quantityprice });
       }
-      localStorage.setItem("cartItems", JSON.stringify(state.cartItems)); // LocalStorage mein update karo
+
+      if (typeof window !== "undefined") { // Ensure we're on the client-side
+        localStorage.setItem("cartItems", JSON.stringify(state.cartItems)); // Update localStorage
+      }
     },
 
     removeToCart: (state, action) => {
       state.cartItems = state.cartItems.filter((item) => item._id !== action.payload._id);
-      localStorage.setItem("cartItems", JSON.stringify(state.cartItems)); // LocalStorage mein update karo
+
+      if (typeof window !== "undefined") { // Ensure we're on the client-side
+        localStorage.setItem("cartItems", JSON.stringify(state.cartItems)); // Update localStorage
+      }
     },
 
     decreaseQuantity: (state, action) => {
@@ -32,7 +45,10 @@ const cartSlice = createSlice({
         existingItem.quantity = existingItem.quantity - 1;
         existingItem.quantityprice = existingItem.quantity * existingItem.price;
       }
-      localStorage.setItem("cartItems", JSON.stringify(state.cartItems)); // LocalStorage mein update karo
+
+      if (typeof window !== "undefined") { // Ensure we're on the client-side
+        localStorage.setItem("cartItems", JSON.stringify(state.cartItems)); // Update localStorage
+      }
     },
 
     increaseQuantity: (state, action) => {
@@ -44,14 +60,18 @@ const cartSlice = createSlice({
         existingItem.quantity = existingItem.quantity + 1;
         existingItem.quantityprice = existingItem.quantity * existingItem.price;
       }
-      localStorage.setItem("cartItems", JSON.stringify(state.cartItems)); // LocalStorage mein update karo
-    },
 
-    getTotalItems: (state) => {
-      return state.cartItems.reduce((total, item) => total + item.quantity, 0);
+      if (typeof window !== "undefined") { // Ensure we're on the client-side
+        localStorage.setItem("cartItems", JSON.stringify(state.cartItems)); // Update localStorage
+      }
     },
   },
 });
 
-export const { addToCart, removeToCart, getTotalItems, increaseQuantity, decreaseQuantity } = cartSlice.actions;
+// Selector to get total items
+export const getTotalItems = (state) => {
+  return state.cart.cartItems.reduce((total, item) => total + item.quantity, 0);
+};
+
+export const { addToCart, removeToCart, initializeCart, increaseQuantity, decreaseQuantity } = cartSlice.actions;
 export default cartSlice.reducer;

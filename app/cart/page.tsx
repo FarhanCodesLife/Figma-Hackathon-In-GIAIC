@@ -1,6 +1,6 @@
 
 "use client"
-import React from "react";
+import React, { useEffect } from "react";
 import Allhero from "@/components/Allhero";
 import Navbar from "@/components/Navbar";
 import Banifits from "@/components/Banifits";
@@ -11,6 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   decreaseQuantity,
   increaseQuantity,
+  initializeCart,
   removeToCart,
 } from "../reduxconfig/reducer/cartSlice";
 import { urlFor } from "@/sanity/lib/image";
@@ -33,6 +34,12 @@ interface Product {
 
 const Page = () => {
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(initializeCart());
+  }, [dispatch]);
+
+
   const cartItems: Product[] = useSelector(
     (state: { cart: { cartItems: Product[] } }) => state.cart.cartItems
   );

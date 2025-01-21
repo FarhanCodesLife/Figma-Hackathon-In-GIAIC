@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+// import React, { useEffect } from "react";
 import Allhero from "@/components/Allhero";
 import Navbar from "@/components/Navbar";
 import Banifits from "@/components/Banifits";
@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import backgroundimage from "@/public/assets/Rectangle 1.png";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
-import { removeTowish } from "../reduxconfig/reducer/wishSlice";
+import {  removeTowish } from "../reduxconfig/reducer/wishSlice";
 import { urlFor } from "@/sanity/lib/image";
 import { FaTrash } from "react-icons/fa";
 import Link from "next/link";
@@ -27,6 +27,11 @@ interface Product {
 
 const Page = () => {
   const dispatch = useDispatch();
+
+  // useEffect(() => {
+  //   dispatch(initializeWishItems());
+  // }, [dispatch]);
+
   const wishItems: Product[] = useSelector(
     (state: { wish: { wishItems: Product[] } }) => state.wish.wishItems
   );
