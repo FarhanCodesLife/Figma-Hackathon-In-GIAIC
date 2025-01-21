@@ -21,7 +21,7 @@ import { client } from '@/sanity/lib/client';
 import { urlFor } from '@/sanity/lib/image';
 import { Skeleton } from "@/components/ui/skeleton"
 import { addTowish, removeTowish } from '@/app/reduxconfig/reducer/wishSlice';
-// import { useRouter } from 'next/router';
+import Cards from '@/components/Cards';
 
 const SingleProduct = () => {
 
@@ -55,11 +55,18 @@ const SingleProduct = () => {
     image?: string;
     isNew?: boolean;
     reviews?: Review[];
-    tags?: string[]
+    tags?: string[];
+  productImage?: string;
+
   }
+
+  type ColorOption = '#6B7FB7' | '#986B9C' | '#A48D6B'; // Explicitly define allowed color values
+type SizeOption = 'L' | 'XL' | 'XS'; // Explicitly define allowed size values
 
   const [product, setProduct] = useState<Product | null>(null);
   // const [mostSellproduct, setMostSellproduct] = useState<Product[]|null>([]);
+    const [mostSellproduct, setMostSellproduct] = useState<Product[]>([]);
+  
   const [isLoading, setIsLoading] = useState<boolean>(true); // Loading state
   const [isInWishlist, setIsInWishlist] = useState(false);
   const wishItems: Product[] = useSelector(
@@ -81,7 +88,7 @@ const SingleProduct = () => {
         const mostSell = `*[price > 200]`;
         const data = await client.fetch(singleProduct);
         const mostSellData = await client.fetch(mostSell);
-        // setMostSellproduct(mostSellData);
+        setMostSellproduct(mostSellData);
         if (data && data.length > 0) {
           setProduct(data[0]); // Set the first product from the result
         }
@@ -120,8 +127,8 @@ const SingleProduct = () => {
   console.log(product);
 
   // Add color and size options
-  const colorOptions = ['#6B7FB7', '#986B9C', '#A48D6B'];
-  const sizeOptions = ['L', 'XL', 'XS'];
+  const colorOptions:ColorOption[] = ['#6B7FB7', '#986B9C', '#A48D6B'];
+  const sizeOptions:SizeOption[] = ['L', 'XL', 'XS'];
   // const imageUrl = product?.image?.asset?._ref ? urlFor(product.productImage).url() : '/placeholder.jpg';
 
   // Add state for quantity
@@ -131,8 +138,8 @@ const SingleProduct = () => {
   //   // Navigate to a new page (e.g., '/about')
   //   // router.push('/cart');
   // };
-  const [selectedSize, setSelectedSize] = useState(null); // For selected size
-  const [selectedColor, setSelectedColor] = useState(null); // For selected color
+  const [selectedSize, setSelectedSize] = React.useState<SizeOption | null>(null); // Allow `null` when no size is selected
+  const [selectedColor, setSelectedColor] =  React.useState<ColorOption | null>(null); // For selected color
   // Add to cart handler
   const handleAddToCart = () => {
     console.log("click button");
@@ -263,7 +270,7 @@ const SingleProduct = () => {
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-gray-100">
             <Image
-              src={urlFor(product.image).url() || '/placeholder.jpg'}
+              src={urlFor(product.image)?.url() || '/placeholder.jpg'}
               alt={product.title}
               fill
               className="object-cover hover:scale-105 transition-transform duration-300"
@@ -409,27 +416,18 @@ const SingleProduct = () => {
             </p>
           </div>
         </div>
-      </div>
-      // <div className='m-4 sm:m-10 text-center'>
+       <div className='m-4 sm:m-10 text-center'>
         
-      //  <h1 className='text-3xl m-10 font-bold'>
+        <h1 className='text-3xl m-10 font-bold'>
         
-      //    Most Selling Products
-      //   </h1>
+          Most Selling Products
+         </h1>
 
-      // <Cards products={products}/>
-      // </div>
+       <Cards products={mostSellproduct}/>
+       </div>
+      </div>
         )}
 
-        {/* Most Sell Section */}
-        <div className="mt-16">
-          <h2 className="text-3xl font-semibold text-gray-800">Most Selling Products</h2>
-          {/* <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-8 mt-8"> */}
-            
-              {/* <Cards products={mostSellproduct} /> */}
-           
-          {/* </div> */}
-        </div>
       </div>
 
       <Banifits />

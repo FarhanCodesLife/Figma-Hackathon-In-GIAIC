@@ -35,9 +35,7 @@ const Page = () => {
     dispatch(removeTowish({ _id }));
   };
 
-  // const addProductToCart = (item: Product) => {
-  //   dispatch(addToCart(item)); // Assuming there's an addToCart action in your Redux setup
-  // };
+
 
   return (
     <>
@@ -45,7 +43,6 @@ const Page = () => {
       <Allhero src={backgroundimage} page="Wish List" />
 
       <div className="container max-w-screen-xl mx-auto p-6 space-y-12">
-        {/* Wishlist Header */}
         <div className="text-center">
           <h2 className="text-3xl font-semibold text-gray-800">Your Wishlist</h2>
           <p className="text-lg text-gray-500 mt-2">
@@ -53,7 +50,6 @@ const Page = () => {
           </p>
         </div>
 
-        {/* Wishlist Section */}
         {wishItems.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {wishItems.map((item: Product) => (
@@ -80,7 +76,6 @@ const Page = () => {
                    
                   <Link href={`/shop/${item._id}`}>
                       <button
-                        // onClick={() => addProductToCart(item)}
                         className="bg-pink-100 text-black py-2 px-4 rounded-lg hover:bg-pink-300 transition"
                         >
                          See More About This Item
