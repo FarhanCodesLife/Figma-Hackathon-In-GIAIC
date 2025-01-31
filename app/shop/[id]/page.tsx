@@ -129,18 +129,12 @@ type SizeOption = 'L' | 'XL' | 'XS'; // Explicitly define allowed size values
   // Add color and size options
   const colorOptions:ColorOption[] = ['#6B7FB7', '#986B9C', '#A48D6B'];
   const sizeOptions:SizeOption[] = ['L', 'XL', 'XS'];
-  // const imageUrl = product?.image?.asset?._ref ? urlFor(product.productImage).url() : '/placeholder.jpg';
 
-  // Add state for quantity
   const [quantity, setQuantity] = React.useState(1);
 
-  // const handleNavigate = () => {
-  //   // Navigate to a new page (e.g., '/about')
-  //   // router.push('/cart');
-  // };
+ 
   const [selectedSize, setSelectedSize] = React.useState<SizeOption | null>(null); // Allow `null` when no size is selected
   const [selectedColor, setSelectedColor] =  React.useState<ColorOption | null>(null); // For selected color
-  // Add to cart handler
   const handleAddToCart = () => {
     console.log("click button");
     if (!selectedSize || !selectedColor) {

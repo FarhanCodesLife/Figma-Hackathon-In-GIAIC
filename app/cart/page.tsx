@@ -16,6 +16,9 @@ import {
 } from "../reduxconfig/reducer/cartSlice";
 import { urlFor } from "@/sanity/lib/image";
 import { FaTrash } from "react-icons/fa6";
+import Link from "next/link";
+import axios from "axios";
+import { loadStripe } from "@stripe/stripe-js";
 
 interface Product {
   _id: number;
@@ -58,6 +61,48 @@ const Page = () => {
     console.log(_id);
   };
 console.log(cartItems);
+
+
+const payNow = async () => {
+  const stripe = await loadStripe("pk_test_51QnEZgB0rHJElOwIjbUdRJ9vArtux3lzv4Q8vWlNjRfg7NmY16nmIbDJxQAW0EYR1KKx6bvI5sD7ffOftvNXSML400ZL5WvomD");
+
+  if (!stripe) {
+    console.error("Stripe failed to load.");
+    return;
+  }
+
+  try {
+    const response = await axios.post('/api/checkout', {
+      products: cartItems.map(item => ({
+        title: item.title,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image,
+        selectedSize: item.selectedSize,
+        selectedColor: item.selectedColor
+      })),
+    });
+
+    console.log("Checkout session response:", response.data);
+
+    if (response.data.id) {
+      const result = await stripe.redirectToCheckout({
+        sessionId: response.data.id,
+      });
+
+      if (result?.error) {
+        console.error(result.error.message);
+        // Optionally show an error message to the user here
+      } else {
+        console.log("Redirecting to Stripe Checkout...");
+      }
+    }
+  } catch (error) {
+    console.error("Payment Error:", error);
+    // Optionally show an error message to the user here
+  }
+};
+
 
   return (
     <>
@@ -173,9 +218,12 @@ console.log(cartItems);
               </span>
             </div>
           </div>
-          <button className="w-full mt-6 bg-black text-white py-3 rounded hover:bg-gray-800">
-            Proceed to Checkout
-          </button>
+          <button
+                  onClick={payNow}
+                  className="w-full bg-green-600 text-white py-2 rounded-md text-sm font-medium hover:bg-green-700 mt-4"
+                >
+                  Pay Now
+                </button>
         </div>
       </div>
       <Banifits />
