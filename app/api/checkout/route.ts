@@ -1,51 +1,64 @@
-// pages/api/checkout.ts
 
-import { NextApiRequest, NextApiResponse } from 'next';
-import Stripe from 'stripe';
+// import { NextApiRequest, NextApiResponse } from "next";
+// import Stripe from "stripe";
 
-const stripe = new Stripe("sk_test_51QnEZgB0rHJElOwI03bKhcQBUjL3iOcnNuhF2xRiqUEHmfu4BBBRY7Fi8A3WqPvoJOZ53llpJLS2Ghr1oLAtIfxx00OxKwwjRY");
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+//   apiVersion: "2023-10-16",
+// });
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'POST') {
-    try {
-      const { products } = req.body;
+// export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+//   if (req.method !== "POST") {
+//     return res.status(405).json({ error: "Method Not Allowed" }); // Handling 405 error
+//   }
 
-      if (!products || products.length === 0) {
-        return res.status(400).json({ error: 'No products provided' });
-      }
+//   try {
+//     // Ensure Stripe Secret Key is available
+//     if (!process.env.STRIPE_SECRET_KEY) {
+//       throw new Error("Stripe secret key is missing in environment variables.");
+//     }
 
-      const lineItems = products.map((item: any) => ({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: item.title,
-            images: [item.image || '/default-image.png'],
-            description: item.selectedSize,
-          },
-          unit_amount: item.price * 100, // amount in cents
-        },
-        quantity: item.quantity,
-      }));
+//     // Parse request body (Fix for Next.js 13+)
+//     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+//     const { products } = body;
 
-      // Create Stripe Checkout session
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: lineItems,
-        mode: 'payment',
-        success_url: `${req.headers.origin}/checkout?success=true`,
-        cancel_url: `${req.headers.origin}/checkout?canceled=true`,
-      });
+//     // Validate product data
+//     if (!products || !Array.isArray(products) || products.length === 0) {
+//       return res.status(400).json({ error: "Invalid or empty product list" });
+//     }
 
-      return res.status(200).json({ id: session.id });
-    } catch (error: any) {
-      console.error('Stripe Checkout Error:', error);
-      return res.status(500).json({ error: error.message });
-    }
-  } else {
-    res.setHeader('Allow', 'POST');
-    res.status(405).end('Method Not Allowed');
-  }
-}
+//     // Format products into Stripe line items
+//     const lineItems = products.map((item: any) => ({
+//       price_data: {
+//         currency: "usd",
+//         product_data: {
+//           name: item.title || "Unknown Product",
+//           images: item.image ? [item.image] : [],
+//           description: item.selectedSize || "No description available",
+//         },
+//         unit_amount: item.price * 100, // Convert dollars to cents
+//       },
+//       quantity: item.quantity || 1,
+//     }));
+
+//     // Create a Stripe Checkout session
+//     const session = await stripe.checkout.sessions.create({
+//       payment_method_types: ["card"],
+//       line_items: lineItems,
+//       mode: "payment",
+//       success_url: `${req.headers.origin}/checkout?success=true`,
+//       cancel_url: `${req.headers.origin}/checkout?canceled=true`,
+//     });
+
+//     return res.status(200).json({ id: session.id });
+//   } catch (error: any) {
+//     console.error("Stripe Checkout Error:", error);
+//     return res.status(500).json({ error: error.message || "Internal Server Error" });
+//   }
+// }
+
+
+
+
 
 
 
@@ -219,3 +232,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 //   Place Order
 // </button>
 // </form>
+import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2023-10-16",
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const { amount } = await request.json();
+
+    if (!amount || typeof amount !== "number") {
+      return NextResponse.json({ error: "Invalid or missing amount" }, { status: 400 });
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount, // Amount in cents (e.g., 10 USD = 1000)
+      currency: "usd",
+      automatic_payment_methods: { enabled: true },
+    });
+
+    return NextResponse.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error: any) {
+    console.error("Internal Error:", error.message);
+    return NextResponse.json(
+      { error: `Internal Server Error: ${error.message}` },
+      { status: 500 }
+    );
+  }
+}
