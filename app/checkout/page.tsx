@@ -10,6 +10,7 @@ import { Elements, useStripe, useElements, PaymentElement } from "@stripe/react-
 import axios from "axios";
 import Image from "next/image";
 import backgroundimage from "@/public/assets/Rectangle 1.png";
+import { Rate } from "@/type"; // Import custom types
 
 interface Product {
   _id: number;
@@ -32,43 +33,59 @@ const CheckoutPage = () => {
   const cartItems: Product[] = useSelector(
     (state: { cart: { cartItems: Product[] } }) => state.cart.cartItems
   );
+  const [rates, setRates] = useState<Rate[]>([]);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [shippingCost, setShippingCost] = useState<number>(0);
-  const [shippingData, setShippingData] = useState(null);
+  const [selectedShipping, setSelectedShipping] = useState<Rate | null>(null);
 
   const totalPrice = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   ) + shippingCost;
 
-  // Function to fetch shipping rates
+  const [shippingData, setShippingData] = useState(null);
+
   const fetchShippingRate = async (data: any) => {
     const shippingData = {
+      firstName:data.firstName,
+      lastName:data.lastName,
+      email:data.email,
+      phone:data.phone,
       country: data.country,
       zip: data.zip,
       streetAddress: data.streetAddress,
       city: data.city,
     };
 
-    try {
-      const response = await axios.post("/api/getRates", shippingData);
-      
-      if (response.status === 200) {
-        setShippingCost(response.data.shippingCost); // Set shipping cost from response
-        setShippingData(response.data); // Set shipping data for future use
-        setCurrentStep(2); // Move to next step (payment)
-      } else {
-        console.error("Failed to fetch shipping rates. Please try again later.");
-      }
-    } catch (error) {
-      console.error("Shipping API error:", error);
-      alert("There was an error fetching shipping rates. Please try again.");
-    }
+    const response = await fetch("/api/getRates", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        shipToAddress: {
+          name: shippingData.firstName + shippingData.lastName,
+          phone: shippingData.phone,
+          addressLine1: shippingData.streetAddress,
+          addressLine2: "Suite 200",
+          cityLocality: shippingData.city,
+          stateProvince: "CA",
+          postalCode: "90001",
+          countryCode: "US",
+          addressResidentialIndicator: "no",
+        },
+        packages: [
+          { weight: { value: 5, unit: "ounce" }, dimensions: { height: 3, width: 15, length: 10, unit: "inch" } },
+        ],
+      }),
+    });
+    
+    const datarates = await response.json();
+    setRates(datarates.shipmentDetails.rateResponse.rates);
   };
 
-  // Fetching client secret after shipping step is completed
   useEffect(() => {
     if (currentStep === 2) {
       fetch("/api/checkout", {
@@ -81,6 +98,15 @@ const CheckoutPage = () => {
     }
   }, [currentStep, totalPrice]);
 
+  const handleShippingSelect = (rate: Rate) => {
+    setSelectedShipping(rate);
+    setShippingCost(rate.shippingAmount.amount / 100); // Shipping cost conversion
+    setCurrentStep(2); // Move to the payment step
+  };
+
+  console.log(rates);
+  
+
   return (
     <>
       <Navbar />
@@ -91,6 +117,46 @@ const CheckoutPage = () => {
             {currentStep === 1 ? "Shipping Details" : "Payment"}
           </h2>
           {currentStep === 1 && <ShippingForm onShippingSubmit={fetchShippingRate} />}
+          
+          {currentStep === 1 && rates.length > 0 && (
+  <div className="mt-6">
+    <h3 className="text-xl font-semibold text-gray-700">Select Shipping Rate</h3>
+    <div className="overflow-x-auto mt-4">
+      <table className="min-w-full table-auto border-collapse">
+        <thead>
+          <tr>
+            <th className="px-4 py-2 border-b text-left text-sm font-medium text-gray-700">Service Name</th>
+            <th className="px-4 py-2 border-b text-left text-sm font-medium text-gray-700">Service Code</th>
+            <th className="px-4 py-2 border-b text-left text-sm font-medium text-gray-700">Estimated Delivery Date</th>
+            <th className="px-4 py-2 border-b text-left text-sm font-medium text-gray-700">Shipping Amount</th>
+            <th className="px-4 py-2 border-b text-left text-sm font-medium text-gray-700">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rates.map((rate) => (
+            <tr
+              key={rate.rateId}
+              className="hover:bg-gray-100 cursor-pointer"
+              onClick={() => handleShippingSelect(rate)}
+            >
+              <td className="px-4 py-2 border-b text-sm text-gray-800">{rate.carrierCode}</td>
+              <td className="px-4 py-2 border-b text-sm text-gray-800">{rate.serviceCode}</td>
+              <td className="px-4 py-2 border-b text-sm text-gray-800">{new Date(rate.estimatedDeliveryDate).toLocaleDateString()}</td>
+              <td className="px-4 py-2 border-b text-sm text-gray-800">${(rate.shippingAmount.amount / 100).toFixed(2)}</td>
+              <td className="px-4 py-2 border-b text-sm text-gray-800">
+                <button className="py-1 px-3 bg-blue-600 text-white rounded-md hover:bg-blue-500">
+                  Select
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+
+
           {currentStep === 2 && clientSecret && (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <PaymentForm setPaymentSuccess={setPaymentSuccess} />
@@ -175,48 +241,36 @@ const ShippingForm = ({ onShippingSubmit }) => {
         {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">ZIP Code</label>
-        <input
-          type="text"
-          {...register("zip", {
-            required: "ZIP Code is required",
-            pattern: {
-              value: /^[0-9]{5}$/,
-              message: "ZIP Code must be 5 digits",
-            },
-          })}
-          className={`mt-1 block w-full border ${errors.zip ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
-        />
-        {errors.zip && <p className="text-red-500 text-xs mt-1">{errors.zip.message}</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Postal Code</label>
+          <input
+            type="text"
+            {...register("zip", { required: "Postal code is required" })}
+            className={`mt-1 block w-full border ${errors.zip ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
+          />
+          {errors.zip && <p className="text-red-500 text-xs mt-1">{errors.zip.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+          <input
+            type="text"
+            {...register("phone", { required: "Phone number is required" })}
+            className={`mt-1 block w-full border ${errors.phone ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
+          />
+          {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+        </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Email</label>
-        <input
-          type="email"
-          {...register("email", { required: "Email is required" })}
-          className={`mt-1 block w-full border ${errors.email ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
-          placeholder="example@email.com"
-        />
-        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+      <div className="flex justify-center mt-8">
+        <button
+          type="submit"
+          className="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          Proceed to Shipping Rates
+        </button>
       </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Phone</label>
-        <input
-          type="text"
-          {...register("phone", { required: "Phone Number is required" })}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3"
-        />
-      </div>
-
-      <button
-        type="submit"
-        className="mt-4 w-full bg-blue-600 text-white font-bold py-2 rounded-md shadow-md hover:bg-blue-700"
-      >
-        Continue to Payment
-      </button>
     </form>
   );
 };
@@ -225,23 +279,19 @@ const PaymentForm = ({ setPaymentSuccess }) => {
   const stripe = useStripe();
   const elements = useElements();
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!stripe || !elements) return;
 
-    if (!stripe || !elements) {
-      return;
-    }
-
-    const { error, paymentIntent } = await stripe.confirmPayment({
+    const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: "http://localhost:3000/checkout/success",
+        return_url: `${window.location.origin}/success`,
       },
     });
 
     if (error) {
       console.error(error);
-      alert("There was an issue with your payment.");
     } else {
       setPaymentSuccess(true);
     }
@@ -250,13 +300,15 @@ const PaymentForm = ({ setPaymentSuccess }) => {
   return (
     <form onSubmit={handleSubmit}>
       <PaymentElement />
-      <button
-        type="submit"
-        disabled={!stripe}
-        className="mt-4 w-full bg-green-600 text-white font-bold py-2 rounded-md shadow-md hover:bg-green-700"
-      >
-        Pay Now
-      </button>
+      <div className="mt-4 text-center">
+        <button
+          type="submit"
+          disabled={!stripe}
+          className="py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
+          Pay Now
+        </button>
+      </div>
     </form>
   );
 };
