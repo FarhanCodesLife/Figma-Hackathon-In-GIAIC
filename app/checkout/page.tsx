@@ -10,7 +10,8 @@ import { Elements, useStripe, useElements, PaymentElement } from "@stripe/react-
 import axios from "axios";
 import Image from "next/image";
 import backgroundimage from "@/public/assets/Rectangle 1.png";
-import { Rate } from "@/type"; // Import custom types
+import { Rate, trackingObjType } from "@/type"; // Import custom types
+import SuccessDialog from "@/components/SuccessDialog";
 
 interface Product {
   _id: number;
@@ -34,11 +35,19 @@ const CheckoutPage = () => {
     (state: { cart: { cartItems: Product[] } }) => state.cart.cartItems
   );
   const [rates, setRates] = useState<Rate[]>([]);
+  const [rateId, setrateId] = useState<string | null>(null);
+
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [shippingCost, setShippingCost] = useState<number>(0);
   const [selectedShipping, setSelectedShipping] = useState<Rate | null>(null);
+
+
+  const [labelPdf, setLabelPdf] = useState<string | null>(null);
+  const [trackingObj, setTrackingObj] = useState<trackingObjType | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
 
   const totalPrice = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
@@ -98,10 +107,50 @@ const CheckoutPage = () => {
     }
   }, [currentStep, totalPrice]);
 
-  const handleShippingSelect = (rate: Rate) => {
+  const handleShippingSelect = async (rate: Rate) => {
+    if (!rate.rateId) {
+      alert("Please select a rate to create a label.");
+    }
+    console.log(rate);
+    
+
+    setLoading(true);
+    setErrors([]);
+
+    try {
+      // get rateId which user selected
+      const response = await fetch("/api/label", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rateId: rate.rateId,}),
+        
+      })
+      const labelData = await response.json(); // Parse the response body as JSON
+      // see the response of label in browser
+      console.log(labelData);
+      // set pdf url
+      // setLabelPdf(labelData.labelDownload.href);
+      // // set tracking obj
+      // setTrackingObj({
+      //   trackingNumber: labelData.trackingNumber,
+      //   labelId: labelData.labelId,
+      //   carrierCode: labelData.carrierCode,
+
+
+
+      // });
+
+
+       // Move to the payment step
+    } catch (error) {
+      console.log(error);
+      setErrors(["An error occurred while creating the label."]);
+    } finally {
+      setLoading(false);
+    }
     setSelectedShipping(rate);
-    setShippingCost(rate.shippingAmount.amount / 100); // Shipping cost conversion
-    setCurrentStep(2); // Move to the payment step
+    setShippingCost(rate.shippingAmount.amount); // Shipping cost conversion
+    setCurrentStep(2);
   };
 
   console.log(rates);
@@ -116,6 +165,7 @@ const CheckoutPage = () => {
           <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
             {currentStep === 1 ? "Shipping Details" : "Payment"}
           </h2>
+          
           {currentStep === 1 && <ShippingForm onShippingSubmit={fetchShippingRate} />}
           
           {currentStep === 1 && rates.length > 0 && (
@@ -144,7 +194,8 @@ const CheckoutPage = () => {
               <td className="px-4 py-2 border-b text-sm text-gray-800">{new Date(rate.estimatedDeliveryDate).toLocaleDateString()}</td>
               <td className="px-4 py-2 border-b text-sm text-gray-800">${(rate.shippingAmount.amount / 100).toFixed(2)}</td>
               <td className="px-4 py-2 border-b text-sm text-gray-800">
-                <button className="py-1 px-3 bg-blue-600 text-white rounded-md hover:bg-blue-500">
+                <button                   onClick={() => setrateId(rate.rateId)}
+ className="py-1 px-3 bg-blue-600 text-white rounded-md hover:bg-blue-500">
                   Select
                 </button>
               </td>
@@ -154,14 +205,16 @@ const CheckoutPage = () => {
       </table>
     </div>
   </div>
-)}
 
+)}
 
           {currentStep === 2 && clientSecret && (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <PaymentForm setPaymentSuccess={setPaymentSuccess} />
             </Elements>
-          )}
+                )}
+        {paymentSuccess && <SuccessDialog />}
+                  
         </div>
       </div>
       <Footer />
@@ -213,32 +266,32 @@ const ShippingForm = ({ onShippingSubmit }) => {
           className={`mt-1 block w-full border ${errors.country ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
         >
           <option value="">Select Country</option>
-          <option value="Sri Lanka">Sri Lanka</option>
-          <option value="India">India</option>
-          <option value="Pakistan">Pakistan</option>
+          <option value="US">United States</option>
+          <option value="IN">India</option>
+          <option value="PK">Pakistan</option>
         </select>
         {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country.message}</p>}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Street Address</label>
-        <input
-          type="text"
-          {...register("streetAddress", { required: "Street Address is required" })}
-          className={`mt-1 block w-full border ${errors.streetAddress ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
-          placeholder="House number and street name"
-        />
-        {errors.streetAddress && <p className="text-red-500 text-xs mt-1">{errors.streetAddress.message}</p>}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Town / City</label>
-        <input
-          type="text"
-          {...register("city", { required: "City is required" })}
-          className={`mt-1 block w-full border ${errors.city ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
-        />
-        {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Street Address</label>
+          <input
+            type="text"
+            {...register("streetAddress", { required: "Street Address is required" })}
+            className={`mt-1 block w-full border ${errors.streetAddress ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
+          />
+          {errors.streetAddress && <p className="text-red-500 text-xs mt-1">{errors.streetAddress.message}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">City</label>
+          <input
+            type="text"
+            {...register("city", { required: "City is required" })}
+            className={`mt-1 block w-full border ${errors.city ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
+          />
+          {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -246,14 +299,13 @@ const ShippingForm = ({ onShippingSubmit }) => {
           <label className="block text-sm font-medium text-gray-700">Postal Code</label>
           <input
             type="text"
-            {...register("zip", { required: "Postal code is required" })}
+            {...register("zip", { required: "Postal Code is required" })}
             className={`mt-1 block w-full border ${errors.zip ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
           />
           {errors.zip && <p className="text-red-500 text-xs mt-1">{errors.zip.message}</p>}
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+          <label className="block text-sm font-medium text-gray-700">Phone</label>
           <input
             type="text"
             {...register("phone", { required: "Phone number is required" })}
@@ -263,14 +315,12 @@ const ShippingForm = ({ onShippingSubmit }) => {
         </div>
       </div>
 
-      <div className="flex justify-center mt-8">
-        <button
-          type="submit"
-          className="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          Proceed to Shipping Rates
-        </button>
-      </div>
+      <button
+        type="submit"
+        className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-500 mt-6"
+      >
+        Next: Select Shipping
+      </button>
     </form>
   );
 };
@@ -278,37 +328,35 @@ const ShippingForm = ({ onShippingSubmit }) => {
 const PaymentForm = ({ setPaymentSuccess }) => {
   const stripe = useStripe();
   const elements = useElements();
-
-  const handleSubmit = async (event) => {
+  
+  const handlePaymentSubmit = async (event) => {
     event.preventDefault();
-    if (!stripe || !elements) return;
-
-    const { error } = await stripe.confirmPayment({
+    
+    const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/success`,
+        return_url: "http://localhost:3000/checkout/success", // Update this URL as needed
       },
     });
 
     if (error) {
-      console.error(error);
+      console.error(error.message);
+      setPaymentSuccess(false);
     } else {
       setPaymentSuccess(true);
+      console.log("Payment successful!");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handlePaymentSubmit}>
       <PaymentElement />
-      <div className="mt-4 text-center">
-        <button
-          type="submit"
-          disabled={!stripe}
-          className="py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          Pay Now
-        </button>
-      </div>
+      <button
+        type="submit"
+        className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-500 mt-6"
+      >
+        Complete Payment
+      </button>
     </form>
   );
 };
