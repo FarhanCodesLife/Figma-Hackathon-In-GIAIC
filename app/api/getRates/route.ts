@@ -1,31 +1,16 @@
 import { Address, Package } from "@/type"; // Import custom types
 import { NextRequest } from "next/server";
-import shipEngine from "@/lib/helper/shipEngine";
+import ShipEngine from "shipengine";
 
 // Ensure ShipEngine API key exists
 if (!process.env.SHIPENGINE_API_KEY) {
   throw new Error("❌ Missing ShipEngine API Key in environment variables.");
 }
 
-interface ShipmentAddress {
-  name: string;
-  phone: string;
-  addressLine1: string;
-  addressLine2: string;
-  cityLocality: string;
-  stateProvince: string;
-  postalCode: string;
-  countryCode: string;
-  addressResidentialIndicator: string;
-}
-
-interface ShipmentRequest {
-  shipToAddress: ShipmentAddress;
-  packages: Array<{
-    weight: { value: number; unit: string };
-    dimensions: { height: number; width: number; length: number; unit: string };
-  }>;
-}
+// Create a private instance of ShipEngine
+const shipengine = new ShipEngine({
+  apiKey: process.env.SHIPENGINE_API_KEY as string,
+});
 
 interface ShipEngineError extends Error {
   response?: {
@@ -37,7 +22,7 @@ interface ShipEngineError extends Error {
 export async function POST(req: NextRequest) {
   try {
     // Parse the request body
-    const body: ShipmentRequest = await req.json();
+    const body = await req.json();
     console.log("📥 Received request body:", body);
 
     const { shipToAddress, packages }: { shipToAddress: Address; packages: Package[] } = body;
@@ -80,7 +65,7 @@ export async function POST(req: NextRequest) {
     try {
       console.log("🚀 Sending request to ShipEngine...");
 
-      const shipmentDetails = await shipEngine.getRatesWithShipmentDetails({
+      const shipmentDetails = await shipengine.getRatesWithShipmentDetails({
         shipment: {
           shipTo: shipToAddress,
           shipFrom: shipFromAddress,
@@ -108,10 +93,7 @@ export async function POST(req: NextRequest) {
       console.error("❌ ShipEngine API Error:", shipEngineError?.response?.data || shipEngineError.message);
 
       return new Response(
-        JSON.stringify({ 
-          error: "❌ Failed to fetch rates from ShipEngine", 
-          details: shipEngineError.message 
-        }),
+        JSON.stringify({ error: "❌ Failed to fetch rates from ShipEngine", details: shipEngineError.message }),
         { status: 500 }
       );
     }
@@ -121,7 +103,7 @@ export async function POST(req: NextRequest) {
     console.error("❌ Internal Server Error:", serverError.message);
 
     return new Response(
-      JSON.stringify({ error: serverError.message || 'Unknown error occurred' }), 
+      JSON.stringify({ error: "❌ Internal Server Error", details: serverError.message }), 
       { status: 500 }
     );
   }

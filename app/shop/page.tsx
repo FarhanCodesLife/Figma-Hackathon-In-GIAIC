@@ -1,7 +1,7 @@
 "use client";
 import Allhero from "@/components/Allhero";
 import Navbar from "@/components/Navbar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import backgroundimage from "@/public/assets/Rectangle 1.png";
 import Cards from "@/components/Cards";
 import { client } from "@/sanity/lib/client";
@@ -29,6 +29,10 @@ interface Product {
 const Page = () => {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [filter, setFilter] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<string>("lowToHigh");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10; // Define how many items to show per page
 
   useEffect(() => {
     const query2 = `*[_type == "Products"]{
@@ -43,7 +47,6 @@ const Page = () => {
       try {
         const fetchQuery2 = await client.fetch(query2);
         console.log(fetchQuery2);
-
         setAllProducts(fetchQuery2); // Set the fetched data to state
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -53,7 +56,20 @@ const Page = () => {
     };
 
     fetchProducts();
-  }, []); // Empty dependency array ensures it runs only once on component mount
+  }, []);
+
+  // Filter and sort products
+  const filteredProducts = useMemo(() => {
+    return allProducts
+      .filter(product => product.title.toLowerCase().includes(filter.toLowerCase()))
+      .sort((a, b) => sortOrder === "lowToHigh" ? a.price - b.price : b.price - a.price);
+  }, [allProducts, filter, sortOrder]);
+
+  // Pagination logic
+  const indexOfLastProduct = currentPage * itemsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
+  const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
   return (
     <>
@@ -85,22 +101,47 @@ const Page = () => {
               className="object-contain"
               alt="filter"
             />
+            <input 
+              type="text" 
+              value={filter} 
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Search products..." 
+              className="border rounded p-1"
+            />
           </div>
           <div className="border-l-2 px-5 hidden md:block">
-            <p>Showing 1 to 16 of 32 result</p>
+            <p>Showing 1 to {allProducts.length} of {allProducts.length} result</p>
           </div>
         </div>
 
         <div className="w-full md:w-1/2 flex flex-col md:flex-row md:justify-end items-center space-y-3 md:space-y-0 md:space-x-5 px-4 md:px-10">
           <div className="flex space-x-3">
-            <a>Show</a>
-            <input type="text" className="w-20" />
+            <label htmlFor="show">Show</label>
+            <input type="number" className="w-20" min="1" defaultValue="10" />
           </div>
           <div className="flex space-x-3">
-            <p>Short By</p>
-            <input type="text" className="w-32" />
+            <p>Sort By</p>
+            <select 
+              onChange={(e) => setSortOrder(e.target.value)} 
+              className="w-32"
+            >
+              <option value="lowToHigh">Price: Low to High</option>
+              <option value="highToLow">Price: High to Low</option>
+            </select>
           </div>
         </div>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div className="flex space-x-3">
+          <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>
+            Previous
+          </button>
+          <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>
+            Next
+          </button>
+        </div>
+        <p>Page {currentPage} of {totalPages}</p>
       </div>
 
       {isLoading ? (
@@ -117,23 +158,8 @@ const Page = () => {
           ))}
         </div>
       ) : (
-        <Cards products={allProducts} />
+        <Cards products={currentProducts} />
       )}
-
-      <div className="flex justify-center space-x-3 md:space-x-6 items-center p-4 md:p-8">
-        <div className="px-3 md:px-4 py-2 cursor-pointer bg-[#FAF3EA] rounded-lg hover:bg-orange-800">
-          1
-        </div>
-        <div className="px-3 md:px-4 py-2 cursor-pointer bg-[#FAF3EA] rounded-lg hover:bg-orange-800">
-          2
-        </div>
-        <div className="px-3 md:px-4 py-2 cursor-pointer bg-[#FAF3EA] rounded-lg hover:bg-orange-800">
-          3
-        </div>
-        <div className="px-3 md:px-4 py-2 cursor-pointer bg-[#FAF3EA] rounded-lg hover:bg-orange-800">
-          Next
-        </div>
-      </div>
 
       <Banifits />
       <Footer />
