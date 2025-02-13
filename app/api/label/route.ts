@@ -1,4 +1,4 @@
-import { shipengine } from "@/lib/helper/ShipEngine";
+import shipEngine from "@/lib/helper/shipEngine";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Use the ShipEngine SDK to create a label from the provided rateId
-    const label = await shipengine.createLabelFromRate({
+    const label = await shipEngine.createLabelFromRate({
       rateId,
     });
 

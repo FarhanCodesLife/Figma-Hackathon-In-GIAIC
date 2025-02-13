@@ -1,4 +1,4 @@
-import { shipengine } from "@/lib/helper/shipEngine";
+import shipEngine from "@/lib/helper/shipEngine";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -16,10 +16,10 @@ export async function GET(
   try {
     // you have two options to track
     // you can track using label id
-    const label = await shipengine.trackUsingLabelId(labelId);
+    const label = await shipEngine.trackUsingLabelId(labelId);
     // or
     // you can track using carrier code and tracking number
-    // const label = await shipengine.trackUsingCarrierCodeAndTrackingNumber({
+    // const label = await shipEngine.trackUsingCarrierCodeAndTrackingNumber({
     //   carrierCode: "carrier code", // Replace with the actual carrier code
     //   trackingNumber: "tracking number", // Replace with the actual tracking number
     // });

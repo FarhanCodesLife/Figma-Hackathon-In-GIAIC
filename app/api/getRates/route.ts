@@ -1,15 +1,11 @@
 import { Address, Package } from "@/type"; // Import custom types
 import { NextRequest } from "next/server";
-import ShipEngine from "shipengine";
+import shipEngine from "@/lib/helper/shipEngine";
 
 // Ensure ShipEngine API key exists
 if (!process.env.SHIPENGINE_API_KEY) {
   throw new Error("❌ Missing ShipEngine API Key in environment variables.");
 }
-
-export const shipengine = new ShipEngine({
-  apiKey: process.env.SHIPENGINE_API_KEY as string,
-});
 
 interface ShipmentAddress {
   name: string;
@@ -84,7 +80,7 @@ export async function POST(req: NextRequest) {
     try {
       console.log("🚀 Sending request to ShipEngine...");
 
-      const shipmentDetails = await shipengine.getRatesWithShipmentDetails({
+      const shipmentDetails = await shipEngine.getRatesWithShipmentDetails({
         shipment: {
           shipTo: shipToAddress,
           shipFrom: shipFromAddress,
