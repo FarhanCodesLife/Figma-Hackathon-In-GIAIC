@@ -8,7 +8,6 @@ import { useSelector } from "react-redux";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import backgroundimage from "@/public/assets/Rectangle 1.png";
-import { Rate } from "@/type"; // Import custom types
 
 interface Product {
   _id: number;
@@ -34,6 +33,7 @@ interface FormData {
   zip: string;
   streetAddress: string;
   city: string;
+  companyName?: string;
 }
 
 interface Rate {
@@ -56,7 +56,6 @@ const CheckoutPage = () => {
   const [rateId, setrateId] = useState<string | null>(null);
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
   const [shippingCost, setShippingCost] = useState<number>(0);
 
   const totalPrice = cartItems.reduce(
@@ -198,7 +197,7 @@ const CheckoutPage = () => {
 
           { clientSecret && rateId && (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <PaymentForm setPaymentSuccess={setPaymentSuccess} />
+              <PaymentForm />
             </Elements>)}
                 
         
@@ -211,9 +210,9 @@ const CheckoutPage = () => {
 };
 
 const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData) => void }) => {
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
 
-  const onSubmit = (data) => onShippingSubmit(data);
+  const onSubmit = (data: FormData) => onShippingSubmit(data);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -225,7 +224,11 @@ const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData)
             {...register("firstName", { required: "First Name is required" })}
             className={`mt-1 block w-full border ${errors.firstName ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
           />
-          {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
+          {errors.firstName && (
+            <p className="text-red-500 text-xs mt-1">
+              {String(errors.firstName.message)}
+            </p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Last Name</label>
@@ -234,7 +237,11 @@ const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData)
             {...register("lastName", { required: "Last Name is required" })}
             className={`mt-1 block w-full border ${errors.lastName ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
           />
-          {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
+          {errors.lastName && (
+            <p className="text-red-500 text-xs mt-1">
+              {String(errors.lastName.message)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -258,7 +265,11 @@ const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData)
           <option value="IN">India</option>
           <option value="PK">Pakistan</option>
         </select>
-        {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country.message}</p>}
+        {errors.country && (
+          <p className="text-red-500 text-xs mt-1">
+            {String(errors.country.message)}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -269,7 +280,11 @@ const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData)
             {...register("streetAddress", { required: "Street Address is required" })}
             className={`mt-1 block w-full border ${errors.streetAddress ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
           />
-          {errors.streetAddress && <p className="text-red-500 text-xs mt-1">{errors.streetAddress.message}</p>}
+          {errors.streetAddress && (
+            <p className="text-red-500 text-xs mt-1">
+              {String(errors.streetAddress.message)}
+            </p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">City</label>
@@ -278,7 +293,11 @@ const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData)
             {...register("city", { required: "City is required" })}
             className={`mt-1 block w-full border ${errors.city ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
           />
-          {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
+          {errors.city && (
+            <p className="text-red-500 text-xs mt-1">
+              {String(errors.city.message)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -290,7 +309,11 @@ const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData)
             {...register("zip", { required: "Postal Code is required" })}
             className={`mt-1 block w-full border ${errors.zip ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
           />
-          {errors.zip && <p className="text-red-500 text-xs mt-1">{errors.zip.message}</p>}
+          {errors.zip && (
+            <p className="text-red-500 text-xs mt-1">
+              {String(errors.zip.message)}
+            </p>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Phone</label>
@@ -299,7 +322,11 @@ const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData)
             {...register("phone", { required: "Phone number is required" })}
             className={`mt-1 block w-full border ${errors.phone ? "border-red-500" : "border-gray-300"} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm h-10 px-3`}
           />
-          {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+          {errors.phone && (
+            <p className="text-red-500 text-xs mt-1">
+              {String(errors.phone.message)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -313,25 +340,27 @@ const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData)
   );
 };
 
-const PaymentForm = ({ setPaymentSuccess }: { setPaymentSuccess: (success: boolean) => void }) => {
+const PaymentForm = () => {
   const stripe = useStripe();
   const elements = useElements();
   
-  const handlePaymentSubmit = async (event) => {
+  const handlePaymentSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     
-    const { error, paymentIntent } = await stripe.confirmPayment({
+    if (!stripe || !elements) {
+      return;
+    }
+
+    const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `http://www.localhost:3000/checkout/success?amount=100`, // Update this URL as needed
+        return_url: `http://www.localhost:3000/checkout/success?amount=100`,
       },
     });
 
     if (error) {
       console.error(error.message);
-      setPaymentSuccess(false);
     } else {
-      setPaymentSuccess(true);
       console.log("Payment successful!");
     }
   };
@@ -341,7 +370,8 @@ const PaymentForm = ({ setPaymentSuccess }: { setPaymentSuccess: (success: boole
       <PaymentElement />
       <button
         type="submit"
-        className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-500 mt-6"
+        disabled={!stripe}
+        className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-500 mt-6 disabled:bg-gray-400"
       >
         Complete Payment
       </button>
