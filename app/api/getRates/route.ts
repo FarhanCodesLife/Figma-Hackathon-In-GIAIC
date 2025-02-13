@@ -11,10 +11,37 @@ export const shipengine = new ShipEngine({
   apiKey: process.env.SHIPENGINE_API_KEY as string,
 });
 
+interface ShipmentAddress {
+  name: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2: string;
+  cityLocality: string;
+  stateProvince: string;
+  postalCode: string;
+  countryCode: string;
+  addressResidentialIndicator: string;
+}
+
+interface ShipmentRequest {
+  shipToAddress: ShipmentAddress;
+  packages: Array<{
+    weight: { value: number; unit: string };
+    dimensions: { height: number; width: number; length: number; unit: string };
+  }>;
+}
+
+interface ShipEngineError extends Error {
+  response?: {
+    data?: unknown;
+  };
+  message: string;
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Parse the request body
-    const body = await req.json();
+    const body: ShipmentRequest = await req.json();
     console.log("📥 Received request body:", body);
 
     const { shipToAddress, packages }: { shipToAddress: Address; packages: Package[] } = body;
@@ -80,18 +107,26 @@ export async function POST(req: NextRequest) {
 
       return new Response(JSON.stringify({ shipToAddress, packages, shipmentDetails }), { status: 200 });
 
-    } catch (apiError: any) {
-      console.error("❌ ShipEngine API Error:", apiError?.response?.data || apiError.message);
+    } catch (apiError) {
+      const shipEngineError = apiError as ShipEngineError;
+      console.error("❌ ShipEngine API Error:", shipEngineError?.response?.data || shipEngineError.message);
 
       return new Response(
-        JSON.stringify({ error: "❌ Failed to fetch rates from ShipEngine", details: apiError?.message }),
+        JSON.stringify({ 
+          error: "❌ Failed to fetch rates from ShipEngine", 
+          details: shipEngineError.message 
+        }),
         { status: 500 }
       );
     }
 
-  } catch (error: any) {
-    console.error("❌ Internal Server Error:", error.message);
+  } catch (error) {
+    const serverError = error as Error;
+    console.error("❌ Internal Server Error:", serverError.message);
 
-    return new Response(JSON.stringify({ error: "❌ Internal Server Error", details: error.message }), { status: 500 });
+    return new Response(
+      JSON.stringify({ error: serverError.message || 'Unknown error occurred' }), 
+      { status: 500 }
+    );
   }
 }
