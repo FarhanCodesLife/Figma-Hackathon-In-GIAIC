@@ -7,11 +7,8 @@ import Footer from "@/components/Footer";
 import { useSelector } from "react-redux";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
-import axios from "axios";
-import Image from "next/image";
 import backgroundimage from "@/public/assets/Rectangle 1.png";
-import { Rate, trackingObjType } from "@/type"; // Import custom types
-import SuccessDialog from "@/components/SuccessDialog";
+import { Rate } from "@/type"; // Import custom types
 
 interface Product {
   _id: number;
@@ -28,6 +25,27 @@ interface Product {
   selectedColor?: string;
 }
 
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  country: string;
+  zip: string;
+  streetAddress: string;
+  city: string;
+}
+
+interface Rate {
+  rateId: string;
+  carrierCode: string;
+  serviceCode: string;
+  estimatedDeliveryDate: string;
+  shippingAmount: {
+    amount: number;
+  };
+}
+
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY || "");
 
 const CheckoutPage = () => {
@@ -39,29 +57,19 @@ const CheckoutPage = () => {
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
-  const [currentStep, setCurrentStep] = useState(1);
   const [shippingCost, setShippingCost] = useState<number>(0);
-  const [selectedShipping, setSelectedShipping] = useState<Rate | null>(null);
-
-
-  const [labelPdf, setLabelPdf] = useState<string | null>(null);
-  const [trackingObj, setTrackingObj] = useState<trackingObjType | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<string[]>([]);
 
   const totalPrice = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   ) + shippingCost;
 
-  const [shippingData, setShippingData] = useState(null);
-
-  const fetchShippingRate = async (data: any) => {
+  const fetchShippingRate = async (data: FormData): Promise<void> => {
     const shippingData = {
-      firstName:data.firstName,
-      lastName:data.lastName,
-      email:data.email,
-      phone:data.phone,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
       country: data.country,
       zip: data.zip,
       streetAddress: data.streetAddress,
@@ -92,70 +100,50 @@ const CheckoutPage = () => {
     });
     
     const datarates = await response.json();
-    setRates(datarates.shipmentDetails.rateResponse.rates);
+    setRates(datarates.shipmentDetails.rateResponse.rates.slice(0,3));
   };
 
   useEffect(() => {
-    if (currentStep === 2) {
-      fetch("/api/checkout", {
+    const fetchCheckout = async () => {
+      const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: totalPrice * 100 }),
-      })
-        .then((res) => res.json())
-        .then((data) => setClientSecret(data.clientSecret));
-    }
-  }, [currentStep, totalPrice]);
+      });
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+    };
 
-  const handleShippingSelect = async (rate: Rate) => {
+    fetchCheckout();
+  }, [totalPrice]);
+
+  const handleShippingSelect = async (rate: Rate): Promise<void> => {
     if (!rate.rateId) {
       alert("Please select a rate to create a label.");
+      return;
     }
     console.log(rate);
     
-
-    setLoading(true);
-    setErrors([]);
-
     try {
-      // get rateId which user selected
       const response = await fetch("/api/label", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rateId: rate.rateId,}),
-        
+        body: JSON.stringify({ rateId: rate.rateId}),
       })
       const labelData = await response.json(); // Parse the response body as JSON
       // see the response of label in browser
       console.log(labelData);
-      // set pdf url
-      // setLabelPdf(labelData.labelDownload.href);
-      // // set tracking obj
-      // setTrackingObj({
-      //   trackingNumber: labelData.trackingNumber,
-      //   labelId: labelData.labelId,
-      //   carrierCode: labelData.carrierCode,
-
-
-
-      // });
-
-
-       // Move to the payment step
+    
+      // Move to the payment step
     } catch (error) {
       console.log(error);
-      setErrors(["An error occurred while creating the label."]);
     } finally {
-      setLoading(false);
     }
-    setSelectedShipping(rate);
     setShippingCost(rate.shippingAmount.amount); // Shipping cost conversion
-    setCurrentStep(2);
   };
 
   console.log(rates);
   
-
   return (
     <>
       <Navbar />
@@ -163,13 +151,13 @@ const CheckoutPage = () => {
       <div className="container mx-auto py-10 px-4">
         <div className="max-w-4xl mx-auto bg-white p-6 shadow-md rounded-lg">
           <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
-            {currentStep === 1 ? "Shipping Details" : "Payment"}
+           Shipping Details
           </h2>
           
-          {currentStep === 1 && <ShippingForm onShippingSubmit={fetchShippingRate} />}
+         <ShippingForm onShippingSubmit={fetchShippingRate} />
           
-          {currentStep === 1 && rates.length > 0 && (
-  <div className="mt-6">
+          {rates && rates.length > 0 && (
+  <div className="my-10">
     <h3 className="text-xl font-semibold text-gray-700">Select Shipping Rate</h3>
     <div className="overflow-x-auto mt-4">
       <table className="min-w-full table-auto border-collapse">
@@ -208,12 +196,12 @@ const CheckoutPage = () => {
 
 )}
 
-          {currentStep === 2 && clientSecret && (
+          { clientSecret && rateId && (
             <Elements stripe={stripePromise} options={{ clientSecret }}>
               <PaymentForm setPaymentSuccess={setPaymentSuccess} />
-            </Elements>
-                )}
-        {paymentSuccess && <SuccessDialog />}
+            </Elements>)}
+                
+        
                   
         </div>
       </div>
@@ -222,7 +210,7 @@ const CheckoutPage = () => {
   );
 };
 
-const ShippingForm = ({ onShippingSubmit }) => {
+const ShippingForm = ({ onShippingSubmit }: { onShippingSubmit: (data: FormData) => void }) => {
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = (data) => onShippingSubmit(data);
@@ -325,7 +313,7 @@ const ShippingForm = ({ onShippingSubmit }) => {
   );
 };
 
-const PaymentForm = ({ setPaymentSuccess }) => {
+const PaymentForm = ({ setPaymentSuccess }: { setPaymentSuccess: (success: boolean) => void }) => {
   const stripe = useStripe();
   const elements = useElements();
   
@@ -335,7 +323,7 @@ const PaymentForm = ({ setPaymentSuccess }) => {
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: "http://localhost:3000/checkout/success", // Update this URL as needed
+        return_url: `http://www.localhost:3000/checkout/success?amount=100`, // Update this URL as needed
       },
     });
 
@@ -349,7 +337,7 @@ const PaymentForm = ({ setPaymentSuccess }) => {
   };
 
   return (
-    <form onSubmit={handlePaymentSubmit}>
+    <form onSubmit={handlePaymentSubmit} className="mt-10">
       <PaymentElement />
       <button
         type="submit"

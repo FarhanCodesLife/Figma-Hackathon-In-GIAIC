@@ -401,7 +401,7 @@ type SizeOption = 'L' | 'XL' | 'XS'; // Explicitly define allowed size values
               Additional Information
             </button>
             <button className="px-6 py-3 text-gray-500 hover:text-gray-700">
-              Reviews ({product.reviews?.length || 0})
+              Reviews
             </button>
           </div>
           <div className="py-8 pb-20 border-b-2">
